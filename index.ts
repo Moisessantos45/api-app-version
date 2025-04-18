@@ -1,6 +1,6 @@
 import express from "express";
 import { config } from "dotenv";
-import apiClient from "./comfig";
+import apiClient from "./config";
 import cors from "cors";
 
 config();
@@ -59,6 +59,9 @@ server.post("/v1/api/app", async (req, res) => {
       throw new Error("No se pudo obtener el archivo APK");
     }
 
+    const codeVersion =
+      appFind.name.split("-").pop()?.toString().replace(".apk", "") ?? "0";
+
     res.setHeader("Content-Type", "application/vnd.android.package-archive");
     res.setHeader(
       "Content-Disposition",
@@ -66,6 +69,7 @@ server.post("/v1/api/app", async (req, res) => {
     );
     res.setHeader("Content-Length", data.size);
     res.setHeader("X-App-Name", appFind.name);
+    res.setHeader("X-Code-Version", codeVersion);
 
     const buffer = await data.arrayBuffer();
     res.send(Buffer.from(buffer));
