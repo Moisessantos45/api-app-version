@@ -2,12 +2,22 @@ import express from "express";
 import { config } from "dotenv";
 import apiClient from "./config";
 import cors from "cors";
+import { rateLimit } from 'express-rate-limit'
 
 config();
 
 const server = express();
 
 const PORT = process.env.PORT || 4000;
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 100,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+})
+
+server.use(limiter);
 
 server.use(
   cors({
@@ -16,6 +26,8 @@ server.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+server.use(express.json());
 
 server.get("/", (_, res) => {
   res.send("Hello World");
