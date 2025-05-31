@@ -2,7 +2,7 @@ import express from "express";
 import { config } from "dotenv";
 import apiClient from "./config";
 import cors from "cors";
-import { rateLimit } from 'express-rate-limit'
+import { rateLimit } from "express-rate-limit";
 
 config();
 
@@ -13,9 +13,9 @@ const PORT = process.env.PORT || 4000;
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 100,
-  standardHeaders: 'draft-8',
+  standardHeaders: "draft-8",
   legacyHeaders: false,
-})
+});
 
 server.use(limiter);
 
@@ -88,10 +88,44 @@ server.post("/v1/api/app", async (req, res) => {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Error desconocido";
-    console.error(message);
+
     res.status(500).json({
       error: true,
       message: message,
+      data: null,
+    });
+  }
+});
+
+server.get("/v1/api/app/version-check", async (req, res) => {
+  try {
+    const query = req.query.app ?? "0";
+    if (query === "0") {
+      throw new Error(" No se ha encontrado la aplicación solicitada");
+    }
+    const appName = query.toString().toLowerCase().split("-").shift() ?? "0";
+
+    const appFind = await findApp(appName);
+
+    if (appFind.name === `${query.toString().toLowerCase()}.apk`) {
+      throw new Error("No hay nueva versión disponible");
+    }
+
+    const codeVersion =
+      appFind.name.split("-").pop()?.toString().replace(".apk", "") ?? "0";
+
+    res.status(200).json({
+      error: false,
+      message: "Versión de la aplicación verificada correctamente",
+      data: {
+        appName: appFind.name,
+        codeVersion: codeVersion,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      error: true,
+      message: "Error al verificar la versión de la aplicación",
       data: null,
     });
   }
