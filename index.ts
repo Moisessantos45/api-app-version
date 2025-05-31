@@ -59,7 +59,7 @@ server.post("/v1/api/app", async (req, res) => {
 
     const appFind = await findApp(appName);
 
-    if (appFind.name === `${query.toString().toLowerCase()}.apk`) {
+    if (compareVersions(appFind.name, query.toString().toLowerCase())) {
       throw new Error("No hay nueva versión disponible");
     }
 
@@ -97,17 +97,27 @@ server.post("/v1/api/app", async (req, res) => {
   }
 });
 
+const compareVersions = (
+  currentVersion: string,
+  newVersion: string
+): boolean => {
+  const current = currentVersion.replace(".apk", "").split("-").pop() ?? "0";
+  const new_version = newVersion.split("-").pop() ?? "0";
+
+  return current === new_version;
+};
+
 server.get("/v1/api/app/version-check", async (req, res) => {
   try {
     const query = req.query.app ?? "0";
     if (query === "0") {
-      throw new Error(" No se ha encontrado la aplicación solicitada");
+      throw new Error("No se ha encontrado la aplicación solicitada");
     }
     const appName = query.toString().toLowerCase().split("-").shift() ?? "0";
 
     const appFind = await findApp(appName);
 
-    if (appFind.name === `${query.toString().toLowerCase()}.apk`) {
+    if (compareVersions(appFind.name, query.toString().toLowerCase())) {
       throw new Error("No hay nueva versión disponible");
     }
 
@@ -123,9 +133,11 @@ server.get("/v1/api/app/version-check", async (req, res) => {
       },
     });
   } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Error desconocido";
     res.status(500).json({
       error: true,
-      message: "Error al verificar la versión de la aplicación",
+      message: message,
       data: null,
     });
   }
